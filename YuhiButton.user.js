@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Yuhi Button
-// @version      1.1.8
+// @version      1.1.9
 // @author       YuhiAmatsume
 // @include      *://www.leitstellenspiel.de/*
 // @grant        GM_addStyle
@@ -15,6 +15,8 @@
 
     const DB_NAME = "YuhiDB";
     const DB_VERSION = 1;
+
+    const db = await openDB();
 
     function openDB() {
         return new Promise((resolve, reject) => {
@@ -80,7 +82,7 @@
     // Fetch version from JSON file using fetch
     async function fetchVersionData() {
         try {
-            const response = await fetch('https://yuhiamatsume.github.io/YuhiButton//version.json');
+            const response = await fetch('https://yuhiamatsume.github.io/YuhiButton/version.json');
             return await response.json();
         } catch (error) {
             console.error('Error fetching version data:', error);
@@ -88,42 +90,41 @@
         }
     }
 
-    function setTimeoutPreference(timeout) {
-        localStorage.YuhiTimeout = timeout;
+    async function setTimeoutPreference(timeout) {
+        await idbSet("YuhiTimeout", timeout);
     }
 
-    function getTimeoutPreference() {
-        return localStorage.YuhiTimeout || 0;
+    async function getTimeoutPreference() {
+        return await idbGet("YuhiTimeout") || 0;
     }
 
-    function setMissionListPreference(isActive) {
-        localStorage.YuhiMissionListActive = isActive ? 'true' : 'false';
+    async function setMissionListPreference(isActive) {
+        await idbSet("YuhiMissionListActive", isActive);
     }
 
-    function getMissionListPreference() {
-        return localStorage.YuhiMissionListActive === 'true';
+    async function getMissionListPreference() {
+        return await idbGet("YuhiMissionListActive") ?? false;
     }
 
     // Save Modal State
-    function saveState() {
-        localStorage.YuhiState = JSON.stringify({
+    async function saveState() {
+        await idbSet("YuhiState", {
             config: config,
             vehicles: aVehicleTypes,
             missions: aMissions,
             allianceMissions: allianceMissions,
-            missionListActive: getMissionListPreference()
+            missionListActive: await getMissionListPreference()
         });
     }
     // Load Modal State
-    function loadState() {
-        const savedState = localStorage.YuhiState;
-        if (savedState) {
-            const parsedState = JSON.parse(savedState);
+    async function loadState() {
+        const parsedState = await idbGet("YuhiState");
+        if (parsedState) {
             config = parsedState.config;
             aVehicleTypes = parsedState.vehicles;
             aMissions = parsedState.missions;
             allianceMissions = parsedState.allianceMissions;
-            setMissionListPreference(parsedState.missionListActive);
+            await setMissionListPreference(parsedState.missionListActive);
         }
     }
     // Get the version data
@@ -141,7 +142,7 @@
     }
 
     //Load Saved State
-    loadState();
+    await loadState();
 
     let stopInProgress = false;
 
@@ -152,7 +153,7 @@
     if(!sessionStorage.aVehicleTypesNew || JSON.parse(sessionStorage.aVehicleTypesNew).lastUpdate < (new Date().getTime() - 4 * 500 * 60)) {
         try {
             // Change from $.getJSON to fetch API
-            const response = await fetch("https://yuhiamatsume.github.io/YuhiButton//vehicletype.json");
+            const response = await fetch("https://yuhiamatsume.github.io/YuhiButton/vehicletype.json");
             const data = await response.json();
             sessionStorage.setItem('aVehicleTypesNew', JSON.stringify({lastUpdate: new Date().getTime(), value: data}));
         } catch (error) {
@@ -173,7 +174,7 @@
 
     var aVehicleTypes = JSON.parse(sessionStorage.aVehicleTypesNew).value;
     var aMissions = JSON.parse(sessionStorage.aMissions).value;
-    var config = localStorage.YuhiConfig ? JSON.parse(localStorage.YuhiConfig) : {"credits": 0, "vehicles": [], "missionListActive": true};
+    var config = await idbGet("YuhiConfig") || {"credits": 0, "vehicles": [], "missionListActive": true};
     var allianceMissions = [];
 
     GM_addStyle(`.modal {
@@ -202,7 +203,7 @@ overflow-y: auto;
                           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&#x274C;</span>
                           </button>
-                          <h5 class="modal-title"><center>Wird wieder warm nech.</center></h5>
+                          <h5 class="modal-title"><center>April April der macht wassa will.</center></h5>
                           <div class="btn-group">
                             <a class="btn btn-success btn-xs" id="YuhiScan">Scan</a>
                             <a class="btn btn-success btn-xs" id="YuhiStart">Start</a>
@@ -336,35 +337,50 @@ overflow-y: auto;
 async function alertVehicles() {
     var foundVehicles = [];
 
-    for(var i in allianceMissions) {
+    const timeout = await getTimeoutPreference();
+
+    for (var i in allianceMissions) {
         if (stopInProgress) {
             stopInProgress = false;
             return;
         }
-        
-        await new Promise(resolve => setTimeout(resolve, getTimeoutPreference()));
+
+        await new Promise(resolve => setTimeout(resolve, timeout));
+
         var mId = allianceMissions[i].id;
-        $("#status_"+mId).text("suche ...");
-        var mission = await $.get("/missions/"+mId, (data) => data);
-        var checkboxes = $(".vehicle_checkbox", mission);
-        for(var v = 0; v < checkboxes.length; v++) {
+        $("#status_" + mId).text("suche ...");
+
+        var missionHtml = await $.get("/missions/" + mId);
+        var mission = $(missionHtml);
+
+        var checkboxes = mission.find(".vehicle_checkbox");
+
+        if (!checkboxes || checkboxes.length === 0) {
+            $("#tr_" + mId).removeClass("alert-info").addClass("alert-danger");
+            $("#status_" + mId).text("Fahrzeuge außer Reichweite oder nicht vorhanden!");
+            continue;
+        }
+
+        for (var v = 0; v < checkboxes.length; v++) {
             var vAttr = checkboxes[v].attributes;
             var vType = +vAttr.vehicle_type_id.value;
             var vId = +vAttr.value.value;
 
-            if(config.vehicles.includes(vType) && !foundVehicles.includes(vId)) {
-                $("#status_"+mId).text("alarmiere ...");
-                await $.post('/missions/' + mId + '/alarm', {'vehicle_ids' : vId}).done(function() {
+            if (config.vehicles.includes(vType) && !foundVehicles.includes(vId)) {
+                $("#status_" + mId).text("alarmiere ...");
+
+                await $.post('/missions/' + mId + '/alarm', { 'vehicle_ids': vId }).done(function () {
                     foundVehicles.push(vId);
-                    $("#tr_"+mId).remove();
+                    $("#tr_" + mId).remove();
                     console.log(foundVehicles);
                 });
+
                 break;
             }
 
-            if(v+1 == checkboxes.length) {
-                $("#tr_"+mId).removeClass("alert-info").addClass("alert-danger");
-                $("#status_"+mId).text("Fahrzeuge außer Reichweite oder nicht vorhanden!");
+            if (v + 1 == checkboxes.length) {
+                $("#tr_" + mId).removeClass("alert-info").addClass("alert-danger");
+                $("#status_" + mId).text("Fahrzeuge außer Reichweite oder nicht vorhanden!");
                 break;
             }
         }
@@ -408,7 +424,9 @@ async function alertVehicles() {
         alertVehicles();
     });
 
-    $("body").on("click", "#YuhiPreferences", function() {
+    $("body").on("click", "#YuhiPreferences", async function() {
+        const timeout = await getTimeoutPreference();
+
         var arrVehicles = [];
         for (var i in aVehicleTypes) {
             arrVehicles.push(aVehicleTypes[i].short_name);
@@ -422,7 +440,7 @@ async function alertVehicles() {
             <input type="text" class="form-control form-control-sm" value="${config.maxCredits || 1000000}" id="YuhiMaxCredits" style="width:5em;height:22px;display:inline">
             <span> Credits anzeigen</span>
             <br><br>
-            <label for="YuhiTimeout">Timeout (ms): </label><input type="text" class="form-control form-control-sm" value="${getTimeoutPreference()}" id="YuhiTimeout" style="width:5em;height:22px;display:inline"><span> ms</span>
+            <label for="YuhiTimeout">Timeout (ms): </label><input type="text" class="form-control form-control-sm" value="${timeout}" id="YuhiTimeout" style="width:5em;height:22px;display:inline"><span> ms</span>
             <br><br>
             <label for="YuhiMissionListActive">Eigene Einsätze berücksichtigen?</label>
             <input type="checkbox" id="YuhiMissionListActive" ${config.missionListActive ? 'checked' : ''}>
@@ -440,12 +458,12 @@ async function alertVehicles() {
         $("#YuhiVehicleTypes").val(mapVehicles(config.vehicles, "name"));
     });
 
-    $("body").on("click", "#YuhiBtnSave", function() {
+    $("body").on("click", "#YuhiBtnSave", async function() {
         config.minCredits = +$("#YuhiMinCredits").val();
         config.maxCredits = +$("#YuhiMaxCredits").val();
         config.vehicles = mapVehicles($("#YuhiVehicleTypes").val(), "type");
         config.missionListActive = $("#YuhiMissionListActive").is(":checked");
-        localStorage.YuhiConfig = JSON.stringify(config);
+        await idbSet("YuhiConfig", config);
     
         var timeoutValue = $("#YuhiTimeout").val();
         setTimeoutPreference(timeoutValue);
@@ -453,9 +471,9 @@ async function alertVehicles() {
         $("#YuhiModalBody").html("<h3><center>Einstellungen gespeichert</center></h3>");
     });
 
-    $("body").on("click", "#close", function() {
+    $("body").on("click", "#close", async function() {
         // Save the state when the "Schließen" button is clicked
-        saveState();
+        await saveState();
     });
 
 })();
