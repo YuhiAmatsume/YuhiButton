@@ -411,7 +411,7 @@ async function alertVehicles() {
 
    $("body").on("click", "#chilloutArea", function() {
         if (allianceMissions.length === 0) {
-            $("#YuhiModalBody").html(`<center><img src="https://www.garten-informationen.de/wp-content/uploads/2017/03/japanischer-garten.jpg" style="height:60%;width:60%"></center>`);
+            $("#YuhiModalBody").html(`<center><img src="https://yuhiamatsume.github.io/YuhiButton/splash.jpg" style="height:60%;width:60%"></center>`);
         }
     });
 
