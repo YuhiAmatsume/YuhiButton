@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Afilia Button
+// @name         Yuhi Button
 // @version      1.1.8
-// @author       Afilia
+// @author       YuhiAmatsume
 // @include      *://www.leitstellenspiel.de/*
 // @grant        GM_addStyle
 // ==/UserScript==
@@ -13,7 +13,7 @@
     
     /* ========= IndexedDB Helper ========= */
 
-    const DB_NAME = "AfiliaDB";
+    const DB_NAME = "YuhiDB";
     const DB_VERSION = 1;
 
     function openDB() {
@@ -80,7 +80,7 @@
     // Fetch version from JSON file using fetch
     async function fetchVersionData() {
         try {
-            const response = await fetch('https://afiliaassela.github.io/AfiliaButton/version.json');
+            const response = await fetch('https://yuhiamatsume.github.io/YuhiButton//version.json');
             return await response.json();
         } catch (error) {
             console.error('Error fetching version data:', error);
@@ -89,24 +89,24 @@
     }
 
     function setTimeoutPreference(timeout) {
-        localStorage.AfiliaTimeout = timeout;
+        localStorage.YuhiTimeout = timeout;
     }
 
     function getTimeoutPreference() {
-        return localStorage.AfiliaTimeout || 0;
+        return localStorage.YuhiTimeout || 0;
     }
 
     function setMissionListPreference(isActive) {
-        localStorage.AfiliaMissionListActive = isActive ? 'true' : 'false';
+        localStorage.YuhiMissionListActive = isActive ? 'true' : 'false';
     }
 
     function getMissionListPreference() {
-        return localStorage.AfiliaMissionListActive === 'true';
+        return localStorage.YuhiMissionListActive === 'true';
     }
 
     // Save Modal State
     function saveState() {
-        localStorage.AfiliaState = JSON.stringify({
+        localStorage.YuhiState = JSON.stringify({
             config: config,
             vehicles: aVehicleTypes,
             missions: aMissions,
@@ -116,7 +116,7 @@
     }
     // Load Modal State
     function loadState() {
-        const savedState = localStorage.AfiliaState;
+        const savedState = localStorage.YuhiState;
         if (savedState) {
             const parsedState = JSON.parse(savedState);
             config = parsedState.config;
@@ -131,7 +131,7 @@
 
     // Compare versions and redirect if a higher version is detected
     if (versionData && versionData.version && compareVersions(versionData.version, GM.info.script.version) > 0) {
-        const confirmation = confirm(`Eine neue Version von Afilia Button, Version: (${versionData.version}) ist verfügbar. Willst du die Update URL öffnen?`);
+        const confirmation = confirm(`Eine neue Version von Yuhi Button, Version: (${versionData.version}) ist verfügbar. Willst du die Update URL öffnen?`);
         if (confirmation) {
             window.location.href = versionData.updateURL1;
             setTimeout(() => {
@@ -145,14 +145,14 @@
 
     let stopInProgress = false;
 
-    $("body").on("click", "#AfiliaStop", function() {
+    $("body").on("click", "#YuhiStop", function() {
         stopInProgress = true;
     });
 
     if(!sessionStorage.aVehicleTypesNew || JSON.parse(sessionStorage.aVehicleTypesNew).lastUpdate < (new Date().getTime() - 4 * 500 * 60)) {
         try {
             // Change from $.getJSON to fetch API
-            const response = await fetch("https://afiliaassela.github.io/AfiliaButton/vehicletype.json");
+            const response = await fetch("https://yuhiamatsume.github.io/YuhiButton//vehicletype.json");
             const data = await response.json();
             sessionStorage.setItem('aVehicleTypesNew', JSON.stringify({lastUpdate: new Date().getTime(), value: data}));
         } catch (error) {
@@ -173,7 +173,7 @@
 
     var aVehicleTypes = JSON.parse(sessionStorage.aVehicleTypesNew).value;
     var aMissions = JSON.parse(sessionStorage.aMissions).value;
-    var config = localStorage.AfiliaConfig ? JSON.parse(localStorage.AfiliaConfig) : {"credits": 0, "vehicles": [], "missionListActive": true};
+    var config = localStorage.YuhiConfig ? JSON.parse(localStorage.YuhiConfig) : {"credits": 0, "vehicles": [], "missionListActive": true};
     var allianceMissions = [];
 
     GM_addStyle(`.modal {
@@ -195,7 +195,7 @@ overflow-y: auto;
 }`);
 
     $("body")
-        .prepend(`<div class="modal fade bd-example-modal-lg" id="AfiliaModal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+        .prepend(`<div class="modal fade bd-example-modal-lg" id="YuhiModal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-lg" role="document">
                       <div class="modal-content">
                         <div class="modal-header">
@@ -204,15 +204,15 @@ overflow-y: auto;
                           </button>
                           <h5 class="modal-title"><center>Wird wieder warm nech.</center></h5>
                           <div class="btn-group">
-                            <a class="btn btn-success btn-xs" id="AfiliaScan">Scan</a>
-                            <a class="btn btn-success btn-xs" id="AfiliaStart">Start</a>
-                            <a class="btn btn-danger btn-xs" id="AfiliaStop">Stop</a>
-                            <a class="btn btn-success btn-xs" id="AfiliaPreferences">
+                            <a class="btn btn-success btn-xs" id="YuhiScan">Scan</a>
+                            <a class="btn btn-success btn-xs" id="YuhiStart">Start</a>
+                            <a class="btn btn-danger btn-xs" id="YuhiStop">Stop</a>
+                            <a class="btn btn-success btn-xs" id="YuhiPreferences">
                               <div class="glyphicon glyphicon-cog" style="color:LightSteelBlue"></div>
                             </a>
                           </div>
                         </div>
-                          <div class="modal-body" id="AfiliaModalBody">
+                          <div class="modal-body" id="YuhiModalBody">
                           </div>
                           <div class="modal-footer">
                             <button type="button" class="btn btn-danger" id="close" data-dismiss="modal">Schließen</button>
@@ -222,7 +222,7 @@ overflow-y: auto;
                   </div>`);
 
     $("#search_input_field_missions")
-        .before(`<a id="chilloutArea" data-toggle="modal" data-target="#AfiliaModal" class="btn btn-danger btn-xs">
+        .before(`<a id="chilloutArea" data-toggle="modal" data-target="#YuhiModal" class="btn btn-danger btn-xs">
                    <span class="glyphicon glyphicon-queen"></span>Einsatzbereit</a>`);
 
     function scanMissions() {
@@ -330,7 +330,7 @@ overflow-y: auto;
             </tbody>
             </table>`;
 
-        $("#AfiliaModalBody").html(intoTable);
+        $("#YuhiModalBody").html(intoTable);
     }
 
 async function alertVehicles() {
@@ -395,62 +395,62 @@ async function alertVehicles() {
 
    $("body").on("click", "#chilloutArea", function() {
         if (allianceMissions.length === 0) {
-            $("#AfiliaModalBody").html(`<center><img src="https://www.garten-informationen.de/wp-content/uploads/2017/03/japanischer-garten.jpg" style="height:60%;width:60%"></center>`);
+            $("#YuhiModalBody").html(`<center><img src="https://www.garten-informationen.de/wp-content/uploads/2017/03/japanischer-garten.jpg" style="height:60%;width:60%"></center>`);
         }
     });
 
-    $("body").on("click", "#AfiliaScan", async function() {
+    $("body").on("click", "#YuhiScan", async function() {
         await scanMissions();
         await writeTable();
     });
 
-    $("body").on("click", "#AfiliaStart", function() {
+    $("body").on("click", "#YuhiStart", function() {
         alertVehicles();
     });
 
-    $("body").on("click", "#AfiliaPreferences", function() {
+    $("body").on("click", "#YuhiPreferences", function() {
         var arrVehicles = [];
         for (var i in aVehicleTypes) {
             arrVehicles.push(aVehicleTypes[i].short_name);
         }
         arrVehicles.sort((a, b) => a.toUpperCase() > b.toUpperCase() ? 1 : -1);
     
-        $("#AfiliaModalBody").html(`
+        $("#YuhiModalBody").html(`
             <span>Einsätze ab </span>
-            <input type="text" class="form-control form-control-sm" value="${config.minCredits || 0}" id="AfiliaMinCredits" style="width:5em;height:22px;display:inline">
+            <input type="text" class="form-control form-control-sm" value="${config.minCredits || 0}" id="YuhiMinCredits" style="width:5em;height:22px;display:inline">
             <span> bis </span>
-            <input type="text" class="form-control form-control-sm" value="${config.maxCredits || 1000000}" id="AfiliaMaxCredits" style="width:5em;height:22px;display:inline">
+            <input type="text" class="form-control form-control-sm" value="${config.maxCredits || 1000000}" id="YuhiMaxCredits" style="width:5em;height:22px;display:inline">
             <span> Credits anzeigen</span>
             <br><br>
-            <label for="AfiliaTimeout">Timeout (ms): </label><input type="text" class="form-control form-control-sm" value="${getTimeoutPreference()}" id="AfiliaTimeout" style="width:5em;height:22px;display:inline"><span> ms</span>
+            <label for="YuhiTimeout">Timeout (ms): </label><input type="text" class="form-control form-control-sm" value="${getTimeoutPreference()}" id="YuhiTimeout" style="width:5em;height:22px;display:inline"><span> ms</span>
             <br><br>
-            <label for="AfiliaMissionListActive">Eigene Einsätze berücksichtigen?</label>
-            <input type="checkbox" id="AfiliaMissionListActive" ${config.missionListActive ? 'checked' : ''}>
+            <label for="YuhiMissionListActive">Eigene Einsätze berücksichtigen?</label>
+            <input type="checkbox" id="YuhiMissionListActive" ${config.missionListActive ? 'checked' : ''}>
             <br><br>
-            <label for="AfiliaVehicleTypes">Fahrzeugtypen (Mehrfachauswahl mit Strg + Klick)</label>
-            <select multiple class="form-control" id="AfiliaVehicleTypes" style="height:20em;width:40em"></select>
+            <label for="YuhiVehicleTypes">Fahrzeugtypen (Mehrfachauswahl mit Strg + Klick)</label>
+            <select multiple class="form-control" id="YuhiVehicleTypes" style="height:20em;width:40em"></select>
             <br><br>
-            <a class="btn btn-success" id="AfiliaBtnSave">Speichern</a>
+            <a class="btn btn-success" id="YuhiBtnSave">Speichern</a>
         `);
     
         for (i in arrVehicles) {
-            $("#AfiliaVehicleTypes").append(`<option>${arrVehicles[i]}</option>`);
+            $("#YuhiVehicleTypes").append(`<option>${arrVehicles[i]}</option>`);
         }
     
-        $("#AfiliaVehicleTypes").val(mapVehicles(config.vehicles, "name"));
+        $("#YuhiVehicleTypes").val(mapVehicles(config.vehicles, "name"));
     });
 
-    $("body").on("click", "#AfiliaBtnSave", function() {
-        config.minCredits = +$("#AfiliaMinCredits").val();
-        config.maxCredits = +$("#AfiliaMaxCredits").val();
-        config.vehicles = mapVehicles($("#AfiliaVehicleTypes").val(), "type");
-        config.missionListActive = $("#AfiliaMissionListActive").is(":checked");
-        localStorage.AfiliaConfig = JSON.stringify(config);
+    $("body").on("click", "#YuhiBtnSave", function() {
+        config.minCredits = +$("#YuhiMinCredits").val();
+        config.maxCredits = +$("#YuhiMaxCredits").val();
+        config.vehicles = mapVehicles($("#YuhiVehicleTypes").val(), "type");
+        config.missionListActive = $("#YuhiMissionListActive").is(":checked");
+        localStorage.YuhiConfig = JSON.stringify(config);
     
-        var timeoutValue = $("#AfiliaTimeout").val();
+        var timeoutValue = $("#YuhiTimeout").val();
         setTimeoutPreference(timeoutValue);
     
-        $("#AfiliaModalBody").html("<h3><center>Einstellungen gespeichert</center></h3>");
+        $("#YuhiModalBody").html("<h3><center>Einstellungen gespeichert</center></h3>");
     });
 
     $("body").on("click", "#close", function() {
